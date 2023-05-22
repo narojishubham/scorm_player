@@ -1,70 +1,60 @@
 import React, { useState } from "react";
 import AdmZip from "adm-zip";
+import { saveAs } from "file-saver";
 import JSZip from "jszip";
 
 function UploadScorm() {
   const [file, setFile] = useState();
   const [extractedFiles, setExtractedFiles] = useState([]);
 
-  const handleExtract = (event) => {
-    const file = event.target.files[0];
-    const targetDirectory = "src/scormExtract";
-    if (!file) {
-      return;
-    }
+  const handleFileChange = (e) => {
+    setFile(e.target.files[0]);
+  };
 
-    const zip = new JSZip();
-    zip
-      .loadAsync(file)
-      .then((zip) => {
-        const extractedFilePaths = [];
+  const saveFile = (filePath, fileData) => {
+    const blob = new Blob([fileData]);
+    saveAs(blob, filePath);
+  };
 
-        zip.forEach((relativePath, zipEntry) => {
-          if (!zipEntry.dir) {
-            zipEntry.async("blob").then((blob) => {
-              const extractedFile = new File(
-                [blob],
-                targetDirectory + zipEntry.name,
-                {
-                  type: zipEntry.comment,
-                }
-              );
-              extractedFilePaths.push(extractedFile);
+  const handleFileUpload = () => {
+    if (file) {
+      const reader = new FileReader();
+
+      reader.onload = (event) => {
+        const zip = new JSZip();
+        const zipFile = event.target.result;
+
+        zip
+          .loadAsync(zipFile)
+          .then((zipContents) => {
+            zipContents.forEach((relativePath, zipEntry) => {
+              if (!zipEntry.dir) {
+                zipEntry.async("uint8array").then((fileData) => {
+                  // Store the file in a folder (e.g., 'unzipped') using the relative path
+                  const filePath = `/home/shubham/Desktop/Infipre/test/scorm_player/src/scormExtract/${relativePath}`;
+                  saveFile(filePath, fileData);
+                  // TODO: Save the file data or perform any other desired operations
+                  console.log(filePath, fileData);
+                });
+              }
             });
-          }
-        });
-
-        Promise.all(extractedFilePaths)
-          .then((files) => {
-            setExtractedFiles(files);
-            console.log("Success");
           })
           .catch((error) => {
-            console.error("Error extracting files:", error);
+            console.error("Error unzipping file:", error);
           });
-      })
-      .catch((error) => {
-        console.error("Error loading zip file:", error);
-      });
+      };
+
+      reader.readAsArrayBuffer(file);
+    }
   };
 
   return (
     <div>
-      <input type="file" accept=".zip" onChange={handleExtract} />
+      <input type="file" accept=".zip" onChange={handleFileChange} />
 
-      <button type="button" onClick={handleExtract}>
+      <button type="button" onClick={handleFileUpload}>
         Submit
       </button>
-      {extractedFiles.length > 0 && (
-        <div>
-          <h3>Extracted Files:</h3>
-          <ul>
-            {extractedFiles.map((file) => (
-              <li key={file.name}>{file.name}</li>
-            ))}
-          </ul>
-        </div>
-      )}
     </div>
   );
 }
