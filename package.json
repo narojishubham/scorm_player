@@ -11,7 +11,9 @@
   },
   "dependencies": {
     "@alexisab/react-scorm-provider": "^0.2.0",
+    "adm-zip": "^0.5.10",
     "axios": "^1.4.0",
+    "jszip": "^3.10.1",
     "react": "^18.2.0",
     "react-dom": "^18.2.0",
     "react-router-dom": "^6.11.1"
